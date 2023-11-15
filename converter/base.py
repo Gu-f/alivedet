@@ -2,6 +2,8 @@
 import re
 import socket
 
+from queue import Queue
+
 
 class IpConvertBase(object):
     _SEGMENT_RANGE_1_PATTERN = re.compile("((?:(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d))))-((?:(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d))))")
@@ -16,7 +18,7 @@ class IpConvertBase(object):
     def register_parser(self, func):
         self._support_parsers.append(func)
 
-    def parser(self):
+    def parser(self, ips_queue: Queue = None):
         results = set()
         for ip_str in self.ip_strs:
             for parser_func in self._support_parsers:
@@ -24,6 +26,8 @@ class IpConvertBase(object):
                 if ips:
                     for ip in ips:
                         results.add(ip)
+                        if ips_queue is not None:
+                            ips_queue.put(ip, block=True)
                     break
         return sorted(results, key=socket.inet_aton)
 
